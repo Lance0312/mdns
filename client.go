@@ -247,12 +247,17 @@ func (c *client) query(params *QueryParam) error {
 		select {
 		case resp := <-msgCh:
 			var inp *ServiceEntry
+			var matched bool = true
 			for _, answer := range append(resp.Answer, resp.Extra...) {
-				// TODO(reddaly): Check that response corresponds to serviceAddr?
 				switch rr := answer.(type) {
 				case *dns.PTR:
-					// Create new entry for this
-					inp = ensureName(inprogress, rr.Ptr)
+					if rr.Hdr.Name != serviceAddr {
+						matched = false
+					} else {
+						// Create new entry for this
+						inp = ensureName(inprogress, rr.Ptr)
+						matched = true
+					}
 
 				case *dns.SRV:
 					// Check for a target mismatch
@@ -283,6 +288,11 @@ func (c *client) query(params *QueryParam) error {
 					inp = ensureName(inprogress, rr.Hdr.Name)
 					inp.Addr = rr.AAAA // @Deprecated
 					inp.AddrV6 = rr.AAAA
+				}
+
+				if !matched {
+					inp = nil
+					break
 				}
 			}
 
