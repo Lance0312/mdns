@@ -247,7 +247,7 @@ func (c *client) query(params *QueryParam) error {
 		select {
 		case resp := <-msgCh:
 			var inp *ServiceEntry
-			var matched bool = true
+			var matched bool = false
 			for _, answer := range append(resp.Answer, resp.Extra...) {
 				switch rr := answer.(type) {
 				case *dns.PTR:
